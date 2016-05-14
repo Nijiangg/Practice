@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<style type="text/css">
+		*{margin: 0;padding: 0;}
+		#div1{height: 150px;width: 100%;background-image: url('2.jpg');filter:alpha(opacity=50);opacity:0.8;position: relative;}
+		#ul1{width: 1400px;height: 50px;margin-top: 108px;position: absolute;}
+		li{float: left;width: 200px;height: 40px;line-height: 28px;z-index: 2;cursor: pointer;list-style: none;font-size: 200%;text-align: center;vertical-align: center;position: relative;}
+		.bg{height: 5px;overflow: hidden;background: red;border: none;position: absolute;top: 36px;left: 0;z-index: 1;}
+		.myDiv{position:absolute;right: 0;width: 300px;}
+		#container{width: 100%;height: 500px;}
+		#center{width: 100%;height: 500px;float: left;}
+		#left{width: 650px;height: 500px;float: left;margin-left: -100%;}
+		#right{width: 500px;height: 500px;float: left;margin-left: -500px;}
+		#wrap{margin-left: 650px;margin-right: 500px;height: 500px;background-color: yellow;}
+		#ul2{width:500px;position: relative;margin: 10px auto;}
+		#ul2 li{width: 110px;height: 110px;float: left;list-style: none;margin:5px;}
+		#ul2 .active{border: 1px dashed red;}
+		#scrollBar{width: 50%;height: 500px;background-color: green;float: left;}
+		#tab{width: 50%;height: 500px;background-color: blue;float: left;}
+		#parent{width: 100%;height: 20px;background-color: #ccc;position: relative;}
+		#div3{width: 20px;height: 20px;background-color: red;cursor: pointer;position: absolute;}
+		#div4{width: 200px;height: 300px;border: 1px solid black;background-color: yellow;position: relative;margin: auto;top: 40px;overflow: hidden;}
+		#div5{position: absolute;}
+		#tab input{background-color: #ccc;}
+		#tab .active{background-color: yellow;}
+		#tab div{width:300px;height: 300px;background-color: #ccc;display: none;}
+
+	</style>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script type="text/javascript" src="startMove.js"></script>
+	<script type="text/javascript">
+		window.onload=function()
+		{
+		//自定义滚动条
+			var oDiv3=document.getElementById('div3');
+			var oDiv4=document.getElementById('div4');
+			var oDiv5=document.getElementById('div5');
+			var oParent=document.getElementById('parent');
+
+			function onMouseWheel(ev){
+				var oEvent=ev||event;
+				var bDown=true;
+				bDown=oEvent.wheelDelta?oEvent.wheelDelta<0:oEvent.detail>0;
+				if(bDown){
+					setLeft(oDiv3.offsetLeft+10);
+				}else{
+					setLeft(oDiv3.offsetLeft-10);
+				};
+				//阻止默认滚动条滚动
+				if(oEvent.preventDefault){
+					oEvent.preventDefault();
+				};
+				return false;
+			};
+			myAddEvent(oParent,'mousewheel',onMouseWheel);
+			myAddEvent(oParent,'DOMMouseScroll',onMouseWheel);
+			myAddEvent(oDiv4,'mousewheel',onMouseWheel);
+			myAddEvent(oDiv4,'DOMMouseScroll',onMouseWheel);
+			oDiv3.onmousedown=function(ev){
+				var oEvent=ev||event;
+				var disX=oEvent.clientX-oDiv3.offsetLeft;
+				document.onmousemove=function(ev){
+					var oEvent=ev||event;
+					var l=oEvent.clientX-disX;
+					setLeft(l);
+				};
+				document.onmouseup=function(){
+					document.onmousemove=null;
+					document.onmouseup=null;
+				};
+			};
+			function setLeft(l){
+				if(l<0){
+					l=0;
+				}else if(l>oParent.offsetWidth-oDiv3.offsetWidth){
+					l=oParent.offsetWidth-oDiv3.offsetWidth;
+				};
+				oDiv3.style.left=l+'px';
+				//滚动条拖动的比例
+				var scale=l/(oParent.offsetWidth-oDiv3.offsetWidth);
+				oDiv5.style.top=-(oDiv5.offsetHeight-oDiv4.offsetHeight)*scale+'px';
+			};
+
+
+
+		//滑动菜单
+			var oUl=document.getElementById('ul1');
+			var aLi=oUl.getElementsByTagName('li');
+			var oBg=aLi[aLi.length-1];
+			var oldBgColor='';
+			for(var i=0;i<aLi.length-1;i++){
+				aLi[i].onmouseover=function(){
+					startMove2(oBg,this.offsetLeft);
+				};
+				aLi[i].onmousedown=function(){
+					oldBgColor=this.style.background;
+					this.style.background='#436EEE';
+				};
+				aLi[i].onmouseout=function(){
+					this.style.background=oldBgColor;
+				};
+			};
+
+		//360度全景图片
+			var oDiv=document.getElementById('left');
+			var x=0;
+			var oImg=document.getElementById('img1');
+			var aImg=oDiv.getElementsByTagName('img');
+			var oLastImg=oImg;
+			//图片预加载
+			for(var i=1;i<77;i++){
+				var oNewImg=document.createElement('img');
+				oNewImg.src='tupian ('+i+').jpg';
+				oNewImg.style.display='none';
+				oDiv.appendChild(oNewImg);
+			};
+			oDiv.onmousedown=function(ev){
+				var oEvent=ev||event;
+				var disX=oEvent.clientX-x;
+				document.onmousemove=function(ev){
+					var oEvent=ev||event;
+					x=oEvent.clientX-disX;
+					var l=parseInt(-x/10);
+					//x取负数是往右拖则往右转，防止相反,除以10是控制转动速度
+					if(l>0){
+						l=l%77;
+					}else{
+						l=l+-Math.floor(l/77)*77;
+					};
+					if(oLastImg!=oImg[l]){
+						oLastImg.style.display='none';
+						aImg[l].style.display='block';
+						oLastImg=aImg[l];
+					};
+					return false;
+				};
+				document.onmouseup=function(){
+					document.onmousemove=null;
+					document.onmouseup=null;
+				};
+				return false;
+			};   
+
+		//照片墙
+			var oUl2=document.getElementById('ul2');
+			var aLi2=oUl2.getElementsByTagName('li');
+			var aPos=[];
+			var iMinZindex=2;
+			var i = 0;
+			//布局转换
+			for(i=0;i<aLi2.length;i++){
+				aPos[i]={left:aLi2[i].offsetLeft,top:aLi2[i].offsetTop};
+			};
+			for(i=0;i<aLi2.length;i++){
+				aLi2[i].style.left=aPos[i].left+'px';
+				aLi2[i].style.top=aPos[i].top+'px';
+				aLi2[i].style.position='absolute';
+				aLi2[i].style.margin='0';
+				aLi2[i].index=i;
+			};
+
+			//拖拽
+			for(i=0;i<aLi2.length;i++){
+				setDrag(aLi2[i]);
+			}
+			function setDrag(obj){
+				obj.onmousedown=function(ev){
+					var oEvent=ev||event;
+					obj.style.zIndex=iMinZindex++;
+					var disX=oEvent.clientX-obj.offsetLeft;
+					var disY=oEvent.clientY-obj.offsetTop;
+					document.onmousemove=function(ev){
+						var oEvent=ev||event;
+						obj.style.left=oEvent.clientX-disX+'px';
+						obj.style.top=oEvent.clientY-disY+'px';
+
+						for(i=0;i<aLi2.length;i++){
+							aLi2[i].className='';
+						};
+						var oNear=findNearest(obj);
+						if(oNear){
+							oNear.className='active';
+						}
+					};
+					document.onmouseup=function(){
+						document.onmousemove=null;
+						document.onmouseup=null;
+						var oNear=findNearest(obj);
+						if(oNear){
+							//互换位置
+							oNear.className='';
+							oNear.style.zIndex=iMinZindex++;
+							obj.style.zIndex=iMinZindex++;
+							startMove(oNear,aPos[obj.index]);
+							startMove(obj,aPos[oNear.index]);
+							//交换两个的index值
+							var tmp=0;
+							tmp=obj.index;
+							obj.index=oNear.index;
+							oNear.index=tmp;
+						}else{
+							startMove(obj,aPos[obj.index]);
+						}  //aPos[obj.index]=={left:aPos[obj.index].left,top:aPos[obj.index].top}
+					};
+					clearInterval(obj.timer);
+					return false;
+				};
+			};
+
+			//碰撞检测
+			function cdTest(obj1,obj2){
+				var l1=obj1.offsetLeft;
+				var r1=obj1.offsetLeft+obj1.offsetWidth;
+				var t1=obj1.offsetTop;
+				var b1=obj1.offsetTop+obj1.offsetHeight;
+
+				var l2=obj2.offsetLeft;
+				var r2=obj2.offsetLeft+obj2.offsetWidth;
+				var t2=obj2.offsetTop;
+				var b2=obj2.offsetTop+obj2.offsetHeight;
+				if(r1<l2||l1>r2||b1<t2||t1>b2){
+					return false;
+				}else{
+					return true;
+				};
+			};
+
+			//求两者间的距离
+			function getDis(obj1,obj2){
+				var a=obj1.offsetLeft-obj2.offsetLeft;
+				var b=obj1.offsetTop-obj2.offsetTop;
+				return Math.sqrt(a*a+b*b);
+			};
+
+			//找到碰上的最小距离
+			function findNearest(obj){
+				var iMin=999999999;
+				var iMinIndex=-1;
+
+				for(i=0;i<aLi2.length;i++){
+
+					if(obj==aLi2[i]) continue;
+
+					if(cdTest(obj,aLi2[i])){
+						var dis=getDis(obj,aLi2[i]);
+						if(iMin>dis){
+							iMin=dis;
+							iMinIndex=i;
+						};
+					};
+				};
+				if(iMinIndex==-1){
+					return null;
+				}else
+				{
+					return aLi2[iMinIndex];
+				};
+		   	};														
+		};
+
+		//滑动菜单
+		var iSpeed=0;
+		var left=0;
+		function startMove2(obj,iTarget){
+			clearInterval(obj.timer);
+			obj.timer=setInterval(function(){
+				iSpeed+=(iTarget-obj.offsetLeft)/5;
+				iSpeed*=0.7;
+				left+=iSpeed;
+				if(Math.abs(iSpeed)<1 && Math.abs(left-iTarget)<1){
+					clearInterval(obj.timer);
+					obj.style.left=iTarget+'px';
+				}else{
+					obj.style.left=left+'px';
+				};
+			} ,30);
+		};
+
+		function myAddEvent(obj,sEvent,fn){
+			if(obj.attachEvent){
+				obj.attachEvent('on'+sEvent,fn);
+			}else{
+				obj.addEventListener(sEvent,fn,false);
+			};
+		};
+	</script>
+</head>
+<body>
+	<div id="div1">
+		<ul id="ul1">
+			<li>首页</li>
+			<li>关于我</li>
+			<li>个人日记</li>
+			<li>留言板</li>
+			<li>教程</li>
+			<li>更多</li>
+			<li class="bg"></li>
+		</ul>
+		<div class="myDiv">
+			<img src="10.png" />
+			<a href="https://github.com/Nijiangg"><img src="11.png" /></a>
+		</div>
+	</div>
+	<div id="container">
+		
+		<div id="center">
+			<div id="wrap"> 
+				<div id="scrollBar">
+					<div id="parent">
+						<div id="div3"></div>
+					</div>
+					<div id="div4">
+						<div id="div5">内容简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...简介: 五代十国后期，赵匡胤还只是中级校尉，这时一名禁军小队长就已经知道他陈桥兵变、杯酒释兵权的故事了。大家都还有机会，况且小队长对赵家将来的干法也不是很赞...</div>
+					</div>
+				</div>
+				<div id="tab">
+					<input class='active' type="button" value="JavaScript" />
+					<input type="button" value="JQuery" />
+					<input type="button" value="HTML">
+					<div style="display: block;">grgere</div>
+					<div>djks</div>
+					<div>dfjkd</div>
+				</div>
+			</div>
+		</div>
+	    <div id="left">
+	    	360度全景图片<img src="tupian (0).jpg" id="img1" />
+	    </div>
+	    <div id="right">
+	    	<ul id="ul2">
+				<li><img src="13.jpg" width="110px;" height="110;" /></li>
+				<li><img src="14.jpg" width="110px;" height="110;" /></li>
+				<li><img src="15.jpg" width="110px;" height="110;" /></li>
+				<li><img src="16.jpg" width="110px;" height="110;" /></li>
+				<li><img src="17.jpg" width="110px;" height="110;" /></li>
+				<li><img src="18.jpg" width="110px;" height="110;" /></li>
+				<li><img src="13.jpg" width="110px;" height="110;" /></li>
+				<li><img src="14.jpg" width="110px;" height="110;" /></li>
+				<li><img src="15.jpg" width="110px;" height="110;" /></li>
+				<li><img src="16.jpg" width="110px;" height="110;" /></li>
+				<li><img src="17.jpg" width="110px;" height="110;" /></li>
+				<li><img src="18.jpg" width="110px;" height="110;" /></li>
+				<li><img src="13.jpg" width="110px;" height="110;" /></li>
+				<li><img src="14.jpg" width="110px;" height="110;" /></li>
+				<li><img src="15.jpg" width="110px;" height="110;" /></li>
+				<li><img src="16.jpg" width="110px;" height="110;" /></li>
+			</ul>
+	    </div>
+	</div>
+</body>
+</html>

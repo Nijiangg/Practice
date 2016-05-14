@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<style type="text/css">
+		*{margin: 0;padding: 0;}
+		#div1{height: 150px;width: 100%;background-image: url('2.jpg');filter:alpha(opacity=50);opacity:0.8;position: relative;}
+		#ul1{width: 1400px;height: 50px;margin-top: 108px;position: absolute;}
+		li{float: left;width: 200px;height: 40px;line-height: 28px;z-index: 2;cursor: pointer;list-style: none;font-size: 200%;text-align: center;vertical-align: center;position: relative;}
+		.bg{height: 5px;overflow: hidden;background: red;border: none;position: absolute;top: 36px;left: 0;z-index: 1;}
+		.myDiv{position:absolute;right: 0;width: 300px;}
+		#container{width: 100%;height: 500px;}
+		#center{width: 100%;height: 500px;float: left;}
+		#left{width: 650px;height: 500px;float: left;margin-left: -100%;}
+		#right{width: 500px;height: 500px;float: left;margin-left: -500px;}
+		#wrap{margin-left: 650px;margin-right: 500px;height: 500px;background-color: yellow;}
+		#ul2{width:500px;position: relative;margin: 10px auto;}
+		#ul2 li{width: 150px;height: 150px;float: left;list-style: none;margin:5px;}
+		#ul2 .active{border: 1px dashed red;}
+
+
+	</style>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script type="text/javascript" src="startMove.js"></script>
+	<script type="text/javascript">
+		window.onload=function(){
+			var oUl=document.getElementById('ul1');
+			var aLi=oUl.getElementsByTagName('li');
+			var oBg=aLi[aLi.length-1];
+			var oldBgColor='';
+		//滑动菜单
+			for(var i=0;i<aLi.length-1;i++){
+				aLi[i].onmouseover=function(){
+					startMove(oBg,this.offsetLeft);
+				};
+				aLi[i].onmousedown=function(){
+					oldBgColor=this.style.background;
+					this.style.background='#436EEE';
+				};
+				aLi[i].onmouseout=function(){
+					this.style.background=oldBgColor;
+				};
+			};
+
+		//360度全景图片
+			var oDiv=document.getElementById('left');
+			var x=0;
+			var oImg=document.getElementById('img1');
+			var aImg=oDiv.getElementsByTagName('img');
+			var oLastImg=oImg;
+			//图片预加载
+			for(var i=1;i<77;i++){
+				var oNewImg=document.createElement('img');
+				oNewImg.src='tupian ('+i+').jpg';
+				oNewImg.style.display='none';
+				oDiv.appendChild(oNewImg);
+			};
+			oDiv.onmousedown=function(ev){
+				var oEvent=ev||event;
+				var disX=oEvent.clientX-x;
+				document.onmousemove=function(ev){
+					var oEvent=ev||event;
+					x=oEvent.clientX-disX;
+					var l=parseInt(-x/10);
+					//x取负数是往右拖则往右转，防止相反,除以10是控制转动速度
+					if(l>0){
+						l=l%77;
+					}else{
+						l=l+-Math.floor(l/77)*77;
+					};
+					if(oLastImg!=oImg[l]){
+						oLastImg.style.display='none';
+						aImg[l].style.display='block';
+						oLastImg=aImg[l];
+					};
+					return false;
+				};
+				document.onmouseup=function(){
+					document.onmousemove=null;
+					document.onmouseup=null;
+				};
+				return false;
+			};
+
+		//照片墙
+			var oUl2=document.getElementById('ul2');
+			var aLi2=oUl2.getElementsByTagName('li');
+			var aPos=[];
+			var iMinZindex=2;
+			var j=0;
+			//布局转换
+			for(j=0;j<aLi2.length;j++){
+				aPos[j]={left: aLi2[j].offsetLeft,top: aLi2[j].offsetTop};
+			};
+			for(j=0;j<aLi2.length;j++){
+				aLi2[j].style.left=aPos[j].left+'px';
+				aLi2[j].style.top=aPos[j].top+'px';
+				aLi2[j].style.position='absolute';
+				aLi2[j].style.margin='0';
+				aLi2[j].index=j;
+			};
+			//拖拽
+			for(j=0;j<aLi2.length;j++){
+				setDrag(aLi2[j]);
+			};
+			function setDrag(obj){
+				obj.onmousedown=function(ev){
+					var oEvent=ev||event;
+					obj.style.zIndex=iMinZindex++;
+					var disX=oEvent.clientX-obj.offsetLeft;
+					var disY=oEvent.clientY-obj.offsetTop;
+					document.onmousemove=function(ev){
+						var oEvent=ev||event;
+						obj.style.left=oEvent.clientX-disX+'px';
+						obj.style.top=oEvent.clientY-disY+'px';
+						for(j=0;j<aLi2.length;j++){
+							aLi2.className='';
+						};
+						var oNear=findNearest(obj);
+						if(oNear){
+							oNear.className='active';
+						};
+					};
+					document.onmouseup=function(){
+						document.onmousemove=null;
+						document.onmouseup=null;
+						var oNear=findNearest(obj);
+						if(oNear){
+							//互换位置
+							oNear.className='';
+							oNear.style.zIndex=iMinZindex++;
+							obj.style.zIndex=iMinZindex++;
+							startMove(oNear,aPos[obj.index]);
+							startMove(obj,aPos[oNear.index]);
+							//交换两个的index值
+							var tmp=0;
+							tmp=obj.index;
+							obj.index=oNear.index;
+							oNear.index=tmp;
+						}else{
+							startMove(obj,aPos[obj.index]);
+						};
+					};
+					clearInterval(obj.timer);
+					return false;
+				};
+			};
+			//碰撞检测
+			function cdTest(obj1,obj2){
+				var l1=obj1.offsetLeft;
+				var r1=obj1.offsetLeft+obj1.offsetWidth;
+				var t1=obj1.offsetTop;
+				var b1=obj1.offsetTop+obj1.offsetHeight;
+
+				var l2=obj2.offsetLeft;
+				var r2=obj2.offsetLeft+obj2.offsetWidth;
+				var t2=obj2.offsetTop;
+				var b2=obj2.offsetTop+obj2.offsetHeight;
+				if(r1<l2||l1>r2||b1<t2||t1>b2){
+					return false;
+				}else{
+					return true;
+				};
+			};
+			//求两者间的距离
+			function getDis(obj1,obj2){
+				var a=obj1.offsetLeft-obj2.offsetLeft;
+				var b=obj1.offsetTop-obj2.offsetTop;
+				return Math.sqrt(a*a+b*b);
+			};
+			//找到最小距离的
+			function findNearest(obj){
+				var iMin=999999999;
+				var iMinIndex=-1;
+
+				for(i=0;i<aLi.length;i++){
+
+					if(obj==aLi[i]) continue;
+
+					if(cdTest(obj,aLi[i])){
+						var dis=getDis(obj,aLi[i]);
+						if(iMin>dis){
+							iMin=dis;
+							iMinIndex=i;
+						};
+					};
+				};
+				if(iMinIndex==-1){
+					return null;
+				}else{
+					return aLi[iMinIndex];
+				};
+		   	};
+		};
+
+		//滑动菜单
+		var iSpeed=0;
+		var left=0;
+		function startMove(obj,iTarget){
+			clearInterval(obj.timer);
+			obj.timer=setInterval(function(){
+				iSpeed+=(iTarget-obj.offsetLeft)/5;
+				iSpeed*=0.7;
+				left+=iSpeed;
+				if(Math.abs(iSpeed)<1 && Math.abs(left-iTarget)<1){
+					clearInterval(obj.timer);
+					obj.style.left=iTarget+'px';
+				}else{
+					obj.style.left=left+'px';
+				};
+			} ,30);
+		};
+	</script>
+</head>
+<body>
+	<div id="div1">
+		<ul id="ul1">
+			<li>首页</li>
+			<li>关于我</li>
+			<li>个人日记</li>
+			<li>留言板</li>
+			<li>教程</li>
+			<li>更多</li>
+			<li class="bg"></li>
+		</ul>
+		<div class="myDiv">
+			<img src="10.png" />
+			<a href="https://github.com/Nijiangg"><img src="11.png" /></a>
+		</div>
+	</div>
+	<div id="container">
+		
+		<div id="center">
+			<div id="wrap">
+			主要内容 
+			</div>
+		</div>
+	    <div id="left">
+	    	360度全景图片<img src="tupian (0).jpg" id="img1" />
+	    </div>
+	    <div id="right">
+	    	<ul id="ul2">
+				<li><img src="13.jpg" width="110px;" height="110;" /></li>
+				<li><img src="14.jpg" width="110px;" height="110;" /></li>
+				<li><img src="15.jpg" width="110px;" height="110;" /></li>
+				<li><img src="16.jpg" width="110px;" height="110;" /></li>
+				<li><img src="17.jpg" width="110px;" height="110;" /></li>
+				<li><img src="18.jpg" width="110px;" height="110;" /></li>
+				<li><img src="13.jpg" width="110px;" height="110;" /></li>
+				<li><img src="14.jpg" width="110px;" height="110;" /></li>
+				<li><img src="15.jpg" width="110px;" height="110;" /></li>
+			</ul>
+	    </div>
+	</div>
+</body>
+</html>
